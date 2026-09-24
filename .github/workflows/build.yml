@@ -1,0 +1,44 @@
+name: Build iOS ipa
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        run: xcodegen generate
+
+      - name: Build (unsigned, for sideload)
+        run: |
+          set -o pipefail
+          xcodebuild -project MahjongCounter.xcodeproj \
+            -scheme MahjongCounter \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" | tail -40
+
+      - name: Package unsigned ipa
+        run: |
+          mkdir -p Payload
+          cp -R "build/Build/Products/Release-iphoneos/MahjongCounter.app" Payload/
+          zip -qry MahjongCounter.ipa Payload
+          ls -lh MahjongCounter.ipa
+
+      - name: Upload ipa artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MahjongCounter-ipa
+          path: MahjongCounter.ipa
+          retention-days: 30

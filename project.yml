@@ -1,0 +1,69 @@
+name: MahjongCounter
+options:
+  bundleIdPrefix: com.mahjongcounter
+  deploymentTarget:
+    iOS: "16.4"
+  createIntermediateGroups: true
+
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    CODE_SIGN_STYLE: Automatic
+    ENABLE_USER_SCRIPT_SANDBOXING: "NO"
+
+targets:
+  MahjongCounter:
+    type: application
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: App
+    dependencies:
+      - target: CounterWidget
+        embed: true
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleDisplayName: 麻将记牌器
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        NSSupportsLiveActivities: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mahjongcounter.app
+        TARGETED_DEVICE_FAMILY: "1"
+        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
+
+  CounterWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: Shared
+      - path: Widget
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: 记牌器小组件
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.mahjongcounter.app.widget
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: "YES"
+
+schemes:
+  MahjongCounter:
+    build:
+      targets:
+        MahjongCounter: all
+        CounterWidget: [build]
+    run:
+      config: Debug
+    archive:
+      config: Release
