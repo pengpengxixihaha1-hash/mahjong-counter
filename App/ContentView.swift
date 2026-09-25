@@ -24,6 +24,9 @@ struct ContentView: View {
                         .font(.footnote).foregroundColor(.orange)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                if store.pipOn {
+                    pipPreview
+                }
                 seatSection
                 remainingGrid
                 tapSection
@@ -52,6 +55,15 @@ struct ContentView: View {
                     .font(.caption2)
                     .padding(.horizontal, 8).padding(.vertical, 6)
                     .background(Capsule().fill(Color.blue.opacity(0.35)))
+                    .foregroundColor(.white)
+            }
+            Button {
+                store.togglePip()
+            } label: {
+                Text(store.pipOn ? "浮窗 开" : "浮窗 关")
+                    .font(.caption2)
+                    .padding(.horizontal, 8).padding(.vertical, 6)
+                    .background(Capsule().fill(Color.green.opacity(0.4)))
                     .foregroundColor(.white)
             }
             Button { showHand = true } label: {
@@ -92,6 +104,18 @@ struct ContentView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 10)
         .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue.opacity(0.18)))
+    }
+
+    private var pipPreview: some View {
+        VStack(spacing: 6) {
+            PipPreviewView()
+                .frame(maxWidth: .infinity)
+                .aspectRatio(640 / 420, contentMode: .fit)
+                .background(Color(white: 0.05))
+                .cornerRadius(12)
+            Text("切到游戏后自动变成悬浮小窗（可拖动缩放），实时显示剩余牌和四家出牌；点小窗上的还原按钮可回到 App")
+                .font(.caption2).foregroundColor(.gray)
+        }
     }
 
     private var seatSection: some View {

@@ -16,6 +16,8 @@ final class CounterStore: ObservableObject {
     @Published private(set) var playSeq = 0
     @Published private(set) var note = ""
     @Published var activityRunning = false
+    /// 画中画悬浮窗开关（切到游戏后自动变成可拖动小窗）
+    @Published var pipOn = false
 
     /// 当前牌型（发给扩展）
     @Published private(set) var deck: DeckPreset
@@ -62,6 +64,35 @@ final class CounterStore: ObservableObject {
         if let p = DeckPreset.fromHex(snap.deckHex) { deck = p }
         save()
         syncActivity()
+        refreshPip()
+    }
+
+    // MARK: - 画中画悬浮窗
+
+    /// 把当前状态推给悬浮窗渲染（每帧 = 一张最新牌表）
+    func refreshPip() {
+        PipController.shared.push(PipState(
+            gameNo: gameNo,
+            total: totalRemaining,
+            seq: playSeq,
+            remaining: remaining,
+            lastBySeat: lastBySeat
+        ))
+    }
+
+    /// 开 / 关悬浮窗
+    func togglePip() {
+        if pipOn {
+            PipController.shared.stop()
+        } else {
+            PipController.shared.onChange = { [weak self] in
+                guard let self else { return }
+                if self.pipOn != PipController.shared.running { self.pipOn = PipController.shared.running }
+            }
+            PipController.shared.start()
+            pipOn = PipController.shared.running
+            refreshPip()
+        }
     }
 
     // MARK: - 手动点牌（兜底）
@@ -76,6 +107,7 @@ final class CounterStore: ObservableObject {
         lastBySeat["手记"] = r.label
         save()
         syncActivity()
+        refreshPip()
     }
 
     /// 回滚：多扣了 +1，撤销最后一条对应记录
@@ -87,6 +119,7 @@ final class CounterStore: ObservableObject {
         }
         save()
         syncActivity()
+        refreshPip()
     }
 
     // MARK: - 开场 / 牌型
@@ -103,6 +136,7 @@ final class CounterStore: ObservableObject {
         }
         save()
         syncActivity()
+        refreshPip()
     }
 
     /// 开场按钮：重置本局，并把牌型 + 开场指令发给广播扩展
@@ -119,6 +153,7 @@ final class CounterStore: ObservableObject {
         NotificationBridge.shared.sendReset()
         save()
         startActivity()
+        refreshPip()
     }
 
     func setDeck(_ p: DeckPreset) {
@@ -128,6 +163,7 @@ final class CounterStore: ObservableObject {
         NotificationBridge.shared.sendDeck(p.hex)
         save()
         syncActivity()
+        refreshPip()
     }
 
     // MARK: - 持久化
