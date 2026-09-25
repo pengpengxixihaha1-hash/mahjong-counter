@@ -10,8 +10,8 @@ struct CounterWidgetBundle: WidgetBundle {
 }
 
 /// 灵动岛 / 锁屏实时活动：显示当前局数、全场剩余张数、最近出牌、剩 1 张提醒。
-/// 说明：手动记牌没有读屏能力，切到微信后显示的是你最后一次点牌的状态，
-/// 打完一手牌回 App 点一下即刷新。
+/// 数据来源：广播扩展识别 → 通知回传主 App → 主 App 推送更新
+/// （App 在后台被挂起时更新会延迟，回到 App 刷新）。
 struct CounterLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: CounterActivityAttributes.self) { context in
@@ -42,7 +42,7 @@ struct CounterLiveActivity: Widget {
                             Text(context.state.lowTiles)
                                 .font(.caption).foregroundColor(.orange)
                         } else {
-                            Text("打完一手牌回 App 点一下")
+                            Text("识别中每手出牌自动更新")
                                 .font(.caption2).foregroundColor(.gray)
                         }
                     }
@@ -62,7 +62,7 @@ struct CounterLiveActivity: Widget {
     private func lockScreenView(_ s: CounterActivityAttributes.ContentState) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("麻将记牌器 · 第\(s.gameNo)局")
+                Text("五十K记牌器 · 第\(s.gameNo)局")
                     .font(.caption).foregroundColor(.yellow)
                 Spacer()
                 Text("全场剩 \(s.totalRemaining) 张")

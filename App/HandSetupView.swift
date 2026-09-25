@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// 开局手牌录入：庄家 14 张 / 闲家 13 张。
-/// 设置后剩余 = 每种 4 张 - 手牌；出牌过程在主界面继续点扣。
+/// 开局手牌录入：把你的手牌点进来（+1 / 长按-1），
+/// 剩余 = 牌型总数 - 手牌；广播识别成功后会被自动识别结果覆盖。
 struct HandSetupView: View {
     @EnvironmentObject var store: CounterStore
     @Environment(\.dismiss) private var dismiss
@@ -12,16 +12,13 @@ struct HandSetupView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 10) {
-                Text("开局发完牌后，把你的手牌点进来：点一下 +1，长按 -1")
+                Text("发完牌后，把你的手牌点进来：点一下 +1，长按 -1\n（开着广播时会自动识别，也可不填）")
                     .font(.caption).foregroundColor(.gray)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                ForEach(Suit.allCases) { suit in
+                ForEach(0..<2, id: \.self) { row in
                     HStack(spacing: 5) {
-                        Text(suit.rawValue)
-                            .font(.caption.bold()).foregroundColor(.yellow)
-                            .frame(width: 20)
-                        ForEach(Tile.of(suit)) { tile in
-                            cell(tile)
+                        ForEach(PokerRank.displayOrder.dropFirst(row == 0 ? 0 : 7).prefix(7)) { rank in
+                            cell(rank)
                         }
                     }
                 }
@@ -49,14 +46,19 @@ struct HandSetupView: View {
                     Button("关闭") { dismiss() }
                 }
             }
-            .onAppear { counts = store.hand }
+            .onAppear {
+                counts = [:]
+                for r in PokerRank.displayOrder where store.handCount(r) > 0 {
+                    counts[r.rawValue] = store.handCount(r)
+                }
+            }
         }
     }
 
-    private func cell(_ tile: Tile) -> some View {
-        let n = counts[tile.id] ?? 0
+    private func cell(_ rank: PokerRank) -> some View {
+        let n = counts[rank.rawValue] ?? 0
         return VStack(spacing: 2) {
-            Text(tile.short).font(.system(size: 14, weight: .semibold))
+            Text(rank.label).font(.system(size: 13, weight: .semibold))
             Text("\(n)").font(.system(size: 18, weight: .bold))
         }
         .frame(maxWidth: .infinity, minHeight: 50)
@@ -64,12 +66,12 @@ struct HandSetupView: View {
         .foregroundColor(n > 0 ? .white : Color(white: 0.6))
         .contentShape(Rectangle())
         .onTapGesture {
-            let cur = counts[tile.id] ?? 0
-            if cur < 4 { counts[tile.id] = cur + 1 }
+            let cur = counts[rank.rawValue] ?? 0
+            if cur < store.deck.count(rank) { counts[rank.rawValue] = cur + 1 }
         }
         .onLongPressGesture(minimumDuration: 0.3) {
-            let cur = counts[tile.id] ?? 0
-            if cur > 0 { counts[tile.id] = cur - 1 }
+            let cur = counts[rank.rawValue] ?? 0
+            if cur > 0 { counts[rank.rawValue] = cur - 1 }
         }
     }
 }

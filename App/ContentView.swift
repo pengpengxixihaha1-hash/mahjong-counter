@@ -1,36 +1,47 @@
 import SwiftUI
 
-/// 主界面：万/筒/条/字 四行牌格。
-/// 点一下 = 打出这张牌（剩余 -1 并记入出牌顺序），长按 = 加回（撤销）。
+/// 主界面：
+///  - 「开始识别」→ 系统屏幕广播，识别全自动（每手出牌弹通知提示）
+///  - 牌表显示各牌剩余（对手手里有的牌）；四家最近出牌；出牌顺序
+///  - 点牌格为手动兜底：识别不准时点一下扣一张，长按加回
 struct ContentView: View {
     @EnvironmentObject var store: CounterStore
     @State private var showHand = false
+    @State private var showDeck = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            header
-            if !store.lowTiles().isEmpty {
-                Text("⚠ 剩 1 张：" + store.lowTiles().map(\.label).joined(separator: " "))
-                    .font(.footnote)
-                    .foregroundColor(.orange)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        ScrollView {
+            VStack(spacing: 10) {
+                header
+                startButton
+                if !store.note.isEmpty {
+                    Text(store.note)
+                        .font(.caption).foregroundColor(.cyan)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                if !store.lowTiles().isEmpty {
+                    Text("⚠ 剩 1 张：" + store.lowTiles().map(\.label).joined(separator: " "))
+                        .font(.footnote).foregroundColor(.orange)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                seatSection
+                remainingGrid
+                tapSection
+                logSection
             }
-            ForEach(Suit.allCases) { suit in
-                suitRow(suit)
-            }
-            logSection
+            .padding()
         }
-        .padding()
         .background(Color(white: 0.07).ignoresSafeArea())
         .preferredColorScheme(.dark)
         .sheet(isPresented: $showHand) { HandSetupView() }
+        .sheet(isPresented: $showDeck) { DeckSetupView() }
     }
 
     private var header: some View {
         HStack(spacing: 8) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("第 \(store.gameNo) 局").font(.headline).foregroundColor(.white)
-                Text("全场剩 \(store.totalRemaining) 张 · 已出 \(store.playLog.count) 手")
+                Text("对手共持 \(store.totalRemaining) 张 · 已出 \(store.playSeq) 手 · \(store.deck.name)")
                     .font(.caption2).foregroundColor(.gray)
             }
             Spacer()
@@ -50,10 +61,17 @@ struct ContentView: View {
                     .background(Capsule().fill(Color.indigo.opacity(0.45)))
                     .foregroundColor(.white)
             }
+            Button { showDeck = true } label: {
+                Text("牌型")
+                    .font(.caption2)
+                    .padding(.horizontal, 8).padding(.vertical, 6)
+                    .background(Capsule().fill(Color.purple.opacity(0.4)))
+                    .foregroundColor(.white)
+            }
             Button {
                 store.newGame()
             } label: {
-                Text("新一局")
+                Text("开场")
                     .font(.caption.bold())
                     .padding(.horizontal, 10).padding(.vertical, 6)
                     .background(Capsule().fill(Color.red.opacity(0.75)))
@@ -62,31 +80,71 @@ struct ContentView: View {
         }
     }
 
-    private func suitRow(_ suit: Suit) -> some View {
-        HStack(spacing: 5) {
-            Text(suit.rawValue)
-                .font(.caption.bold())
-                .foregroundColor(.yellow)
-                .frame(width: 20)
-            ForEach(Tile.of(suit)) { tile in
-                tileCell(tile)
+    private var startButton: some View {
+        VStack(spacing: 4) {
+            BroadcastPicker()
+                .frame(width: 46, height: 46)
+            Text("开始识别（选「五十K记牌器」开广播）")
+                .font(.footnote.bold()).foregroundColor(.white)
+            Text("进游戏出牌即可全自动记牌；每局开始先点「开场」")
+                .font(.caption2).foregroundColor(.gray)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(RoundedRectangle(cornerRadius: 12).fill(Color.blue.opacity(0.18)))
+    }
+
+    private var seatSection: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("四家最近出牌").font(.caption).foregroundColor(.gray)
+            ForEach(Seat.all, id: \.self) { seat in
+                HStack {
+                    Text(seat).font(.caption.bold()).foregroundColor(.orange).frame(width: 28, alignment: .leading)
+                    Text(store.lastBySeat[seat] ?? "—")
+                        .font(.system(size: 14, design: .monospaced))
+                        .foregroundColor(.white)
+                    Spacer()
+                }
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color(white: 0.13)))
+    }
+
+    private var remainingGrid: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("对手手里剩的牌（每出一张自动减一）").font(.caption).foregroundColor(.gray)
+            ForEach(0..<2, id: \.self) { row in
+                HStack(spacing: 5) {
+                    ForEach(PokerRank.displayOrder.dropFirst(row == 0 ? 0 : 7).prefix(7)) { rank in
+                        cell(rank)
+                    }
+                }
             }
         }
     }
 
-    private func tileCell(_ tile: Tile) -> some View {
-        let n = store.count(tile)
+    private func cell(_ rank: PokerRank) -> some View {
+        let n = store.count(rank)
         return VStack(spacing: 2) {
-            Text(tile.short).font(.system(size: 14, weight: .semibold))
-            Text("\(n)").font(.system(size: 19, weight: .bold))
+            Text(rank.label).font(.system(size: 13, weight: .semibold))
+            Text("\(n)").font(.system(size: 18, weight: .bold))
         }
         .frame(maxWidth: .infinity, minHeight: 52)
         .background(RoundedRectangle(cornerRadius: 8).fill(Color(white: 0.16)))
         .overlay(RoundedRectangle(cornerRadius: 8).stroke(n == 0 ? Color(white: 0.25) : Color(white: 0.32), lineWidth: 1))
         .foregroundColor(cellColor(n))
         .contentShape(Rectangle())
-        .onTapGesture { store.tap(tile) }
-        .onLongPressGesture(minimumDuration: 0.4) { store.addBack(tile) }
+        .onTapGesture { store.tap(rank) }
+        .onLongPressGesture(minimumDuration: 0.4) { store.addBack(rank) }
+    }
+
+    /// 手动兜底行（同牌格可点，识别不准时用）
+    private var tapSection: some View {
+        Text("识别不准？直接点上面牌格扣牌，长按加回")
+            .font(.caption2).foregroundColor(Color(white: 0.45))
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func cellColor(_ n: Int) -> Color {
@@ -100,22 +158,18 @@ struct ContentView: View {
 
     private var logSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("出牌顺序（最新在上）")
-                .font(.caption).foregroundColor(.gray)
+            Text("出牌顺序（最新在上）").font(.caption).foregroundColor(.gray)
             if store.playLog.isEmpty {
-                Text("打法：打出一张牌后，回 App 点对应牌格一下；点错长按加回。")
+                Text("暂无出牌记录；开始识别后自动记录 对/上/我/下 每一手。")
                     .font(.caption2).foregroundColor(Color(white: 0.45))
             } else {
-                ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 2) {
-                        ForEach(Array(store.playLog.reversed().prefix(60))) { r in
-                            Text("第\(r.seq)手 · \(r.tile)")
-                                .font(.system(size: 13, design: .monospaced))
-                                .foregroundColor(Color(white: 0.85))
-                        }
+                LazyVStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(store.playLog.reversed().prefix(60))) { r in
+                        Text("第\(r.seq)手 · \(r.player) · \(r.cards)")
+                            .font(.system(size: 13, design: .monospaced))
+                            .foregroundColor(Color(white: 0.85))
                     }
                 }
-                .frame(maxHeight: 110)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
