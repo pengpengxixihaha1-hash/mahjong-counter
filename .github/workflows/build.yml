@@ -27,7 +27,7 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY="" | tail -40
+            CODE_SIGN_IDENTITY="" 2>&1 | grep -v -E "^(Swift|CompileC|Ld|Copy|CreateBuild|PhaseScript|Write|ProcessInfo|Generate|MkDir|SymLink|Cp|CDDot|RegisterExecutionPolicy|ExtractAppIntents|AppIntentsSSU|Extract|Clone|Precompile|Emit|Sign|Touch|Validate|Build|Prepare|Planning|Discovering|Evaluate|Compute|Create|WriteAuxiliary|SwiftDriver|SwiftCompile|Compile|LinkStoryboards|CopySwift|CopyStrings|CopyPlist|Capabili|Plist|Ditto|SetOwner|SetMode|TiffUtil|TestBuild)" | tail -120
 
       - name: Package unsigned ipa
         run: |
