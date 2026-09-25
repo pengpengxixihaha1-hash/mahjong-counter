@@ -2,94 +2,58 @@ name: MahjongCounter
 options:
   bundleIdPrefix: com.mahjongcounter
   deploymentTarget:
-    iOS: "16.4"
+    iOS: "16.0"
   createIntermediateGroups: true
-
 settings:
   base:
     SWIFT_VERSION: "5.9"
     CODE_SIGN_STYLE: Automatic
-    ENABLE_USER_SCRIPT_SANDBOXING: "NO"
-
+    DEVELOPMENT_TEAM: ""
 targets:
   MahjongCounter:
     type: application
     platform: iOS
     sources:
-      - path: Shared
       - path: App
+      - path: Shared
     dependencies:
-      - target: CounterWidget
-        embed: true
       - target: BroadcastCapture
         embed: true
     info:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: 五十K记牌器
-        CFBundleShortVersionString: "2.0"
-        CFBundleVersion: "2"
+        CFBundleShortVersionString: "3.0"
+        CFBundleVersion: "3"
         UILaunchScreen: {}
-        NSSupportsLiveActivities: true
         UIBackgroundModes:
           - audio
-        UISupportedInterfaceOrientations:
-          - UIInterfaceOrientationPortrait
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mahjongcounter.app
-        TARGETED_DEVICE_FAMILY: "1"
-        INFOPLIST_KEY_UIUserInterfaceStyle: Dark
-
-  CounterWidget:
-    type: app-extension
-    platform: iOS
-    sources:
-      - path: Shared
-      - path: Widget
-    info:
-      path: Widget/Info.plist
+    entitlements:
+      path: App/MahjongCounter.entitlements
       properties:
-        CFBundleDisplayName: 记牌器小组件
-        CFBundleShortVersionString: "2.0"
-        CFBundleVersion: "2"
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mahjongcounter.app.widget
-        TARGETED_DEVICE_FAMILY: "1"
-        SKIP_INSTALL: "YES"
-
+        com.apple.security.application-groups:
+          - group.com.mahjongcounter.shared
   BroadcastCapture:
-    type: app-extension
+    type: broadcast-extension
     platform: iOS
     sources:
-      - path: Shared/PokerModel.swift
-      - path: BroadcastEngine
+      - path: Broadcast
+      - path: Shared
     info:
-      path: BroadcastEngine/Info.plist
+      path: Broadcast/Info.plist
       properties:
         CFBundleDisplayName: 五十K识别
-        CFBundleShortVersionString: "2.0"
-        CFBundleVersion: "2"
         NSExtension:
           NSExtensionPointIdentifier: com.apple.broadcast-services-upload
-          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).SampleHandler
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.mahjongcounter.app.broadcast
-        TARGETED_DEVICE_FAMILY: "1"
-        SKIP_INSTALL: "YES"
-
+          NSExtensionPrincipalClass: "$(PRODUCT_MODULE_NAME).SampleHandler"
+    entitlements:
+      path: Broadcast/BroadcastCapture.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.mahjongcounter.shared
 schemes:
   MahjongCounter:
     build:
       targets:
         MahjongCounter: all
-        CounterWidget: [build]
-        BroadcastCapture: [build]
-    run:
-      config: Debug
-    archive:
-      config: Release
+        BroadcastCapture: all
