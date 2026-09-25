@@ -113,10 +113,11 @@ struct DeckPreset: Codable, Equatable {
 }
 
 /// 出牌记录一条
-struct PlayEntry: Codable, Equatable {
+struct PlayEntry: Codable, Equatable, Identifiable {
     var seq: Int       // 本局第几手
     var player: String // 对 / 上 / 我 / 下 / 手记（手动点牌）
     var cards: String  // 如 "222" "王"
+    var id: Int { seq }
 }
 
 /// 四家位置名（与识别分区一致）
