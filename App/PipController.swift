@@ -51,7 +51,7 @@ final class PipController: NSObject {
         l.videoGravity = .resizeAspect
         l.frame = CGRect(x: 0, y: 0, width: 640, height: 420)
         l.backgroundColor = UIColor(red: 0.055, green: 0.067, blue: 0.086, alpha: 1).cgColor
-        guard let src = AVPictureInPictureController.ContentSource(sampleBufferDisplayLayer: l, activityAware: false),
+        guard let src = AVPictureInPictureController.ContentSource(sampleBufferDisplayLayer: l, playbackDelegate: self),
               let p = AVPictureInPictureController(contentSource: src) else { return }
         p.canStartPictureInPictureAutomaticallyFromInline = true
         p.delegate = self
@@ -105,7 +105,7 @@ final class PipController: NSObject {
             allocator: nil, imageBuffer: pb, formatDescription: fd,
             sampleTiming: &timing, sampleBufferOut: &sb)
         guard let sb else { return }
-        CMSetAttachment(sb, kCMSampleAttachmentKey_DisplayImmediately as CFString, kCFBooleanTrue, CMAttachmentMode.shouldPropagate)
+        CMSetAttachment(sb, key: kCMSampleAttachmentKey_DisplayImmediately as CFString, value: kCFBooleanTrue, attachmentMode: 1)
         l.enqueue(sb)
     }
 
@@ -236,6 +236,24 @@ extension PipController: AVPictureInPictureControllerDelegate {
     func pictureInPictureControllerDidStopPictureInPicture(_ c: AVPictureInPictureController) {}
 }
 
+// MARK: - PiP 播放代理（静态画面：不响应播放控制）
+
+extension PipController: AVPictureInPictureSampleBufferPlaybackDelegate {
+    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, setPlaying playing: Bool) {}
+
+    func pictureInPictureControllerTimeRangeForPlayback(_ pictureInPictureController: AVPictureInPictureController) -> CMTimeRange {
+        CMTimeRange(start: .zero, duration: CMTime(value: 3600, timescale: 1))
+    }
+
+    func pictureInPictureControllerIsPlaybackPaused(_ pictureInPictureController: AVPictureInPictureController) -> Bool { false }
+
+    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, didTransitionToRenderSize newRenderSize: CMVideoDimensions) {}
+
+    func pictureInPictureController(_ pictureInPictureController: AVPictureInPictureController, skipByInterval skipInterval: CMTime, completion completionHandler: @escaping () -> Void) {
+        completionHandler()
+    }
+}
+
 // MARK: - SwiftUI 预览
 
 struct PipPreviewView: UIViewRepresentable {
@@ -255,8 +273,15 @@ final class PipLayerView: UIView {
         guard attached !== l else { return }
         attached?.removeFromSuperlayer()
         l.frame = bounds
-        l.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         layer.addSublayer(l)
         attached = l
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        attached?.frame = bounds
+        CATransaction.commit()
     }
 }
