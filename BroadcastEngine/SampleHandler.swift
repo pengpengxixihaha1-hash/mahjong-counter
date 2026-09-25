@@ -1,6 +1,5 @@
 import Foundation
 import ReplayKit
-import UserNotifications
 
 /// Darwin 通知处理（文件级全局函数：C 回调闭包内不可捕获任何上下文）
 /// 扩展只接收 App→扩展方向：jp.d.<hex>（牌型）/ jp.reset（开场）/ jp.hello（握手）
@@ -25,13 +24,12 @@ final class SampleHandler: RPBroadcastSampleHandler {
     override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
         SampleHandler.installDarwinObserver()
         RecognitionEngine.shared.start()
-        // 握手：主 App 若在前台会回发牌型配置
+        // 握手：主 App 若在运行会回发牌型配置
         postDarwin("jp.hello")
-        notifyOnce(title: "五十K记牌器", body: "识别已开始：回到游戏正常出牌，每手出牌会弹通知提示")
     }
 
     override func broadcastFinished() {
-        notifyOnce(title: "五十K记牌器", body: "识别已停止。下一局请在 App 里点「开始识别」")
+        RecognitionEngine.shared.stop()
     }
 
     override func processSampleBuffer(_ sampleBuffer: CMSampleBuffer, with sampleBufferType: RPSampleBufferType) {
@@ -63,13 +61,5 @@ final class SampleHandler: RPBroadcastSampleHandler {
         CFNotificationCenterPostNotification(
             CFNotificationCenterGetDarwinNotifyCenter(),
             CFNotificationName(name as CFString), nil, nil, true)
-    }
-
-    private func notifyOnce(title: String, body: String) {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
-        let req = UNNotificationRequest(identifier: "jp-sys-\(UUID().uuidString)", content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(req) { _ in }
     }
 }

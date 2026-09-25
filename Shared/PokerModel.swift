@@ -130,7 +130,7 @@ enum Seat {
 extension Array where Element == Int {
     /// 计数数组 → 14 字符 hex（每牌 4bit，0~15）
     var jpHex14: String {
-        prefix(14).map { String(format: "%x", min(max($0, 0), 15)) }.joined()
+        prefix(14).map { String(format: "%x", Swift.min(Swift.max($0, 0), 15)) }.joined()
     }
 
     /// 14 字符 hex → 计数数组；非法返回 nil

@@ -1,10 +1,9 @@
 import Foundation
 import CoreVideo
-import UserNotifications
 
 /// 屏幕识别引擎（运行在广播扩展内）：
 /// 帧 → 灰度降采样 → 白色牌块 → 块内角标匹配 → 按位置分区
-/// → 状态机（手牌采纳 / 区域对比扣牌）→ 每手发本地通知（横幅 + 数据回传主App）。
+/// → 状态机（手牌采纳 / 区域对比扣牌）→ Darwin 事件回传主App（无通知打扰，浮窗直接刷新）。
 final class RecognitionEngine {
 
     static let shared = RecognitionEngine()
@@ -44,7 +43,7 @@ final class RecognitionEngine {
 
     /// 广播开始：重置为新一局（保留已下发的牌型配置）
     func start() {
-        queue.async { [weak self] in self?.reset(gameIncrement: true, note: nil) }
+        queue.async { [weak self] in self?.reset(gameIncrement: true) }
     }
 
     /// 应用牌型配置（Darwin 通知下发），并重置
@@ -52,18 +51,23 @@ final class RecognitionEngine {
         queue.async { [weak self] in
             guard let self, let p = DeckPreset.fromHex(hex) else { return }
             self.deck = p
-            self.reset(gameIncrement: false, note: "牌型已同步：\(p.name)")
+            self.reset(gameIncrement: false)
         }
     }
 
     /// 主App点开场 / 重置
     func resetGame() {
         queue.async { [weak self] in
-            self?.reset(gameIncrement: true, note: "已开始新一局")
+            self?.reset(gameIncrement: true)
         }
     }
 
-    private func reset(gameIncrement: Bool, note: String?) {
+    /// 广播结束：停止处理帧
+    func stop() {
+        queue.async { [weak self] in self?.started = false }
+    }
+
+    private func reset(gameIncrement: Bool) {
         if gameIncrement { gameNo += 1 }
         remaining = Array(repeating: 0, count: 14)
         for r in PokerRank.displayOrder { remaining[r.rawValue] = deck.count(r) }
@@ -77,7 +81,6 @@ final class RecognitionEngine {
         handAnnounced = false
         idleFrames = 0
         started = true
-        if let note { pushSnapshot(note: note) }
     }
 
     // MARK: - 帧入口
@@ -155,7 +158,6 @@ final class RecognitionEngine {
             if !handAnnounced {
                 handAnnounced = true
                 post("jp.h." + hand.jpHex14)   // 手牌数据事件 → 主 App
-                pushSnapshot(note: "识别到手牌 \(newHandTotal) 张")
             }
         }
 
@@ -200,7 +202,7 @@ final class RecognitionEngine {
             if idleFrames >= 45 {
                 idleFrames = 0
                 post("jp.f")   // 局结束事件 → 主 App 换局
-                reset(gameIncrement: true, note: "检测到本局结束，已重置；下一局发牌后自动识别")
+                reset(gameIncrement: true)
             }
         } else if newHandTotal > 0 || !anyEmpty {
             idleFrames = 0
@@ -218,37 +220,12 @@ final class RecognitionEngine {
         }
     }
 
-    // MARK: - 通知（横幅提示 + Darwin 事件回传主App）
-
-    private func pushSnapshot(note: String) {
-        sendNotification(title: "五十K记牌器", body: note)
-    }
+    // MARK: - Darwin 事件回传主App（无通知打扰）
 
     private func pushHand(_ rec: PlayEntry, counts: [Int]) {
         // 出牌数据事件：jp.o.<seatIdx><cardsHex14>（seat: 0对 1上 2我 3下）
         let seatIdx = Seat.all.firstIndex(of: rec.player) ?? 0
         post("jp.o.\(seatIdx)" + counts.jpHex14)
-        // 关键剩余提示：所出牌中第一个 rank 的剩余
-        var tip = ""
-        for r in PokerRank.displayOrder where rec.cards.contains(r.label) {
-            let left = remaining[r.rawValue]
-            tip = "｜\(r.label)剩\(left)"
-            break
-        }
-        var extra = ""
-        if let best = PokerRank.displayOrder.first(where: { remaining[$0.rawValue] == 1 }) {
-            extra = " ⚠\(best.label)剩1"
-        }
-        sendNotification(title: "五十K记牌器 · 第\(gameNo)局", body: "第\(rec.seq)手 · \(rec.player)家出 \(rec.cards)\(tip)\(extra)")
-    }
-
-    private func sendNotification(title: String, body: String) {
-        let content = UNMutableNotificationContent()
-        content.title = title
-        content.body = body
-        let id = "jp-\(UUID().uuidString)"
-        let req = UNNotificationRequest(identifier: id, content: content, trigger: nil)
-        UNUserNotificationCenter.current().add(req) { _ in }
     }
 
     // MARK: - Darwin 通知发送（跨进程事件通道）
