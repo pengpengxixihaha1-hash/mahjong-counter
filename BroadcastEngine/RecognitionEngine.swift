@@ -13,13 +13,13 @@ final class RecognitionEngine {
 
     // ---- 参数 ----
     private let targetW = 480
-    private let frameInterval: CFTimeInterval = 0.45
+    private let frameInterval: Double = 0.45
     private let matchScore: Float = 0.62
-    private let topSkip = 0.06          // 顶部 HUD 忽略区
-    private let handY = 0.72            // 底部手牌分界
-    private let upperY = 0.38           // 上家分界
-    private let leftX = 0.40            // 下家 / 右侧分界
-    private let rightX = 0.60
+    private let topSkip: Float = 0.06          // 顶部 HUD 忽略区
+    private let handY: Float = 0.72            // 底部手牌分界
+    private let upperY: Float = 0.38           // 上家分界
+    private let leftX: Float = 0.40            // 下家 / 右侧分界
+    private let rightX: Float = 0.60
 
     // ---- 状态 ----
     private var deck = DeckPreset.default
@@ -35,7 +35,7 @@ final class RecognitionEngine {
     private var started = false
     private var handAnnounced = false
     private var idleFrames = 0                     // 全空帧计数（自动判局结束）
-    private var lastProcessAt: CFTimeInterval = 0
+    private var lastProcessAt: Double = 0
 
     private init() {}
 
@@ -82,13 +82,11 @@ final class RecognitionEngine {
     // MARK: - 帧入口
 
     func feed(pixelBuffer: CVPixelBuffer) {
-        let now = CACurrentMediaTime()
+        let now = ProcessInfo.processInfo.systemUptime
         guard now - lastProcessAt >= frameInterval else { return }
         lastProcessAt = now
-        CVPixelBufferRetain(pixelBuffer)
         queue.async { [weak self] in
-            defer { CVPixelBufferRelease(pixelBuffer) }
-            self?.process(pixelBuffer: pixelBuffer)
+            self?.process(pixelBuffer: pixelBuffer)   // Swift 自动管理引用
         }
     }
 
