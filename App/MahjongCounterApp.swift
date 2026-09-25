@@ -3,23 +3,18 @@ import SwiftUI
 @main
 struct MahjongCounterApp: App {
     @StateObject private var store = CounterStore()
-    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(store)
                 .onAppear {
-                    NotificationBridge.shared.onSnapshot = { snap in
-                        store.applyRemote(snap)
-                    }
-                    NotificationBridge.shared.activate()
-                }
-                .onChange(of: scenePhase) { phase in
-                    // 从游戏切回时，拉取挂起期间错过的识别快照
-                    if phase == .active {
-                        NotificationBridge.shared.drainDelivered()
-                    }
+                    let b = NotificationBridge.shared
+                    b.onHandEvent = { counts in store.applyHandEvent(counts) }
+                    b.onPlayEvent = { seatIdx, counts in store.applyPlayEvent(seatIdx: seatIdx, counts: counts) }
+                    b.onEndGame = { store.applyEndGame() }
+                    b.onDiag = { text in store.setDiag(text) }
+                    b.activate()
                 }
         }
     }

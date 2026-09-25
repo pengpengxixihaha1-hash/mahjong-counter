@@ -2,7 +2,7 @@ import Foundation
 import ActivityKit
 
 /// 记牌核心状态：
-///  - 主用：广播扩展自动识别，每手牌通过本地通知把全量快照发回来 → [applyRemote]
+///  - 主用：广播扩展自动识别，通过 Darwin 事件回传（jp.h 手牌 / jp.o 出牌 / jp.f 局结束）
 ///  - 兜底：手动点牌（识别不准时用），点一下扣一张记一手。
 @MainActor
 final class CounterStore: ObservableObject {
@@ -15,6 +15,8 @@ final class CounterStore: ObservableObject {
     @Published private(set) var gameNo = 1
     @Published private(set) var playSeq = 0
     @Published private(set) var note = ""
+    /// 识别诊断（扩展每约2秒回传：牌块数/手牌数/四区计数）
+    @Published private(set) var diag = ""
     @Published var activityRunning = false
     /// 画中画悬浮窗开关（切到游戏后自动变成可拖动小窗）
     @Published var pipOn = false
@@ -49,22 +51,58 @@ final class CounterStore: ObservableObject {
         PokerRank.displayOrder.filter { count($0) == 1 }
     }
 
-    // MARK: - 广播识别数据接入
+    // MARK: - 广播识别事件接入（Darwin 通道）
 
-    /// 应用扩展发来的全量快照
-    func applyRemote(_ snap: CounterSnapshot) {
-        if snap.remaining.count == 14 { remaining = snap.remaining }
-        if snap.hand.count == 14 { hand = snap.hand }
-        handTotal = snap.handTotal
-        playSeq = snap.playSeq
-        if !snap.log.isEmpty { playLog = snap.log }
-        lastBySeat = snap.lastBySeat
-        gameNo = max(gameNo, snap.gameNo)
-        note = snap.note
-        if let p = DeckPreset.fromHex(snap.deckHex) { deck = p }
+    /// 扩展识别到手牌：剩余 = 牌型总数 - 手牌
+    func applyHandEvent(_ counts: [Int]) {
+        guard playSeq == 0 else { return }   // 已记出牌后不再改动手牌基数
+        hand = counts
+        handTotal = counts.reduce(0, +)
+        remaining = deck.counts
+        for r in PokerRank.displayOrder {
+            remaining[r.rawValue] = max(0, deck.count(r) - hand[r.rawValue])
+        }
+        note = "识别到手牌 \(handTotal) 张"
         save()
         syncActivity()
         refreshPip()
+    }
+
+    /// 扩展识别到一手出牌：扣减对应牌数
+    func applyPlayEvent(seatIdx: Int, counts: [Int]) {
+        guard seatIdx >= 0, seatIdx < Seat.all.count, counts.count == 14 else { return }
+        let seat = Seat.all[seatIdx]
+        for i in 0..<14 where counts[i] > 0 {
+            remaining[i] = max(0, remaining[i] - counts[i])
+        }
+        playSeq += 1
+        let cards = cardsText(counts)
+        playLog.append(PlayEntry(seq: playSeq, player: seat, cards: cards))
+        lastBySeat[seat] = cards
+        note = "第\(playSeq)手 · \(seat)家出 \(cards)"
+        save()
+        syncActivity()
+        refreshPip()
+    }
+
+    /// 扩展自动判局结束：换局重置
+    func applyEndGame() {
+        gameNo += 1
+        remaining = deck.counts
+        hand = [Int](repeating: 0, count: 14)
+        handTotal = 0
+        playLog = []
+        playSeq = 0
+        lastBySeat = [:]
+        note = "检测到本局结束，已换局；发牌后自动识别新手牌"
+        save()
+        syncActivity()
+        refreshPip()
+    }
+
+    /// 更新诊断文本
+    func setDiag(_ text: String) {
+        diag = text
     }
 
     // MARK: - 画中画悬浮窗

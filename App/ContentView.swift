@@ -19,6 +19,12 @@ struct ContentView: View {
                         .font(.caption).foregroundColor(.cyan)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                if !store.diag.isEmpty {
+                    Text("诊断 " + store.diag)
+                        .font(.system(.caption2, design: .monospaced))
+                        .foregroundColor(Color(white: 0.55))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
                 if !store.lowTiles().isEmpty {
                     Text("⚠ 剩 1 张：" + store.lowTiles().map(\.label).joined(separator: " "))
                         .font(.footnote).foregroundColor(.orange)

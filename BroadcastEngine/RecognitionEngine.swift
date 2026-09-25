@@ -36,6 +36,7 @@ final class RecognitionEngine {
     private var handAnnounced = false
     private var idleFrames = 0                     // 全空帧计数（自动判局结束）
     private var lastProcessAt: Double = 0
+    private var diagFrames = 0                     // 诊断限流用帧计数
 
     private init() {}
 
@@ -135,12 +136,12 @@ final class RecognitionEngine {
             }
         }
 
-        onFrame(hand: hand, zones: zones)
+        onFrame(hand: hand, zones: zones, blobCount: blobs.count)
     }
 
     // MARK: - 状态机（与安卓版同逻辑）
 
-    private func onFrame(hand newHand: [Int], zones: [String: [Int]]) {
+    private func onFrame(hand newHand: [Int], zones: [String: [Int]], blobCount: Int) {
         let newHandTotal = newHand.reduce(0, +)
 
         // 手牌采纳：出牌记录开始前，识别到 ≥10 张且比当前多 → 替换
@@ -153,6 +154,7 @@ final class RecognitionEngine {
             }
             if !handAnnounced {
                 handAnnounced = true
+                post("jp.h." + hand.jpHex14)   // 手牌数据事件 → 主 App
                 pushSnapshot(note: "识别到手牌 \(newHandTotal) 张")
             }
         }
@@ -186,7 +188,7 @@ final class RecognitionEngine {
                     log.append(rec)
                     if log.count > 60 { log.removeFirst(log.count - 60) }
                     lastBySeat[seat] = cards
-                    pushHand(rec)
+                    pushHand(rec, counts: added)
                 }
                 confirmed[seat] = current
             }
@@ -197,43 +199,35 @@ final class RecognitionEngine {
             idleFrames += 1
             if idleFrames >= 45 {
                 idleFrames = 0
+                post("jp.f")   // 局结束事件 → 主 App 换局
                 reset(gameIncrement: true, note: "检测到本局结束，已重置；下一局发牌后自动识别")
             }
         } else if newHandTotal > 0 || !anyEmpty {
             idleFrames = 0
         }
-    }
 
-    private func cardsText(_ counts: [Int]) -> String {
-        var parts: [String] = []
-        for r in PokerRank.displayOrder {
-            let n = counts[r.rawValue]
-            if n > 0 { parts.append(n > 1 ? "\(r.label)x\(n)" : r.label) }
+        // 诊断摘要（每 4 帧约 1.8s 一条）：牌块数/手牌数/四区各计数
+        diagFrames += 1
+        if diagFrames >= 4 {
+            diagFrames = 0
+            let d = zones["对"]!.reduce(0, +), s = zones["上"]!.reduce(0, +)
+            let w = zones["我"]!.reduce(0, +), x = zones["下"]!.reduce(0, +)
+            post(String(format: "jp.g.%02d%02d%02d%02d%02d%02d",
+                        min(blobCount, 99), min(newHandTotal, 99),
+                        min(d, 99), min(s, 99), min(w, 99), min(x, 99)))
         }
-        return parts.joined(separator: " ")
     }
 
-    // MARK: - 通知（显示 + 数据回传主App）
-
-    private func snapshot(note: String) -> CounterSnapshot {
-        CounterSnapshot(
-            gameNo: gameNo,
-            deckHex: deck.hex,
-            remaining: remaining,
-            hand: hand,
-            handTotal: handTotal,
-            playSeq: playSeq,
-            lastBySeat: lastBySeat,
-            log: Array(log.suffix(30)),
-            note: note
-        )
-    }
+    // MARK: - 通知（横幅提示 + Darwin 事件回传主App）
 
     private func pushSnapshot(note: String) {
-        sendNotification(title: "五十K记牌器", body: note, snapshot: snapshot(note: note), ephemeral: false)
+        sendNotification(title: "五十K记牌器", body: note)
     }
 
-    private func pushHand(_ rec: PlayEntry) {
+    private func pushHand(_ rec: PlayEntry, counts: [Int]) {
+        // 出牌数据事件：jp.o.<seatIdx><cardsHex14>（seat: 0对 1上 2我 3下）
+        let seatIdx = Seat.all.firstIndex(of: rec.player) ?? 0
+        post("jp.o.\(seatIdx)" + counts.jpHex14)
         // 关键剩余提示：所出牌中第一个 rank 的剩余
         var tip = ""
         for r in PokerRank.displayOrder where rec.cards.contains(r.label) {
@@ -245,26 +239,23 @@ final class RecognitionEngine {
         if let best = PokerRank.displayOrder.first(where: { remaining[$0.rawValue] == 1 }) {
             extra = " ⚠\(best.label)剩1"
         }
-        let body = "第\(rec.seq)手 · \(rec.player)家出 \(rec.cards)\(tip)\(extra)"
-        sendNotification(title: "五十K记牌器 · 第\(gameNo)局", body: body, snapshot: snapshot(note: ""), ephemeral: true)
+        sendNotification(title: "五十K记牌器 · 第\(gameNo)局", body: "第\(rec.seq)手 · \(rec.player)家出 \(rec.cards)\(tip)\(extra)")
     }
 
-    private func sendNotification(title: String, body: String, snapshot snap: CounterSnapshot, ephemeral: Bool) {
+    private func sendNotification(title: String, body: String) {
         let content = UNMutableNotificationContent()
         content.title = title
         content.body = body
-        if let data = try? JSONEncoder().encode(snap) {
-            content.userInfo = ["snap": data]
-        }
         let id = "jp-\(UUID().uuidString)"
         let req = UNNotificationRequest(identifier: id, content: content, trigger: nil)
         UNUserNotificationCenter.current().add(req) { _ in }
-        if ephemeral {
-            // 横幅展示后从通知中心移除，保持列表干净
-            DispatchQueue.global().asyncAfter(deadline: .now() + 4) {
-                UNUserNotificationCenter.current()
-                    .removeDeliveredNotifications(withIdentifiers: [id])
-            }
-        }
+    }
+
+    // MARK: - Darwin 通知发送（跨进程事件通道）
+
+    private func post(_ name: String) {
+        CFNotificationCenterPostNotification(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName(name as CFString), nil, nil, true)
     }
 }

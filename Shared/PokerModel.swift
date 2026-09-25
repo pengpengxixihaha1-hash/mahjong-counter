@@ -125,6 +125,36 @@ enum Seat {
     static let all = ["对", "上", "我", "下"]
 }
 
+// MARK: - 跨进程事件编码（Darwin 通知名承载，免费签名无 App Groups 的唯一可靠通道）
+
+extension Array where Element == Int {
+    /// 计数数组 → 14 字符 hex（每牌 4bit，0~15）
+    var jpHex14: String {
+        prefix(14).map { String(format: "%x", min(max($0, 0), 15)) }.joined()
+    }
+
+    /// 14 字符 hex → 计数数组；非法返回 nil
+    static func fromJpHex(_ hex: String) -> [Int]? {
+        guard hex.count == 14 else { return nil }
+        var out: [Int] = []
+        for ch in hex {
+            guard let v = ch.hexDigitValue else { return nil }
+            out.append(v)
+        }
+        return out
+    }
+}
+
+/// 计数数组 → 出牌文本（"222" / "王 2x3"）
+func cardsText(_ counts: [Int]) -> String {
+    var parts: [String] = []
+    for r in PokerRank.displayOrder {
+        let n = counts[r.rawValue]
+        if n > 0 { parts.append(n > 1 ? "\(r.label)x\(n)" : r.label) }
+    }
+    return parts.joined(separator: " ")
+}
+
 /// 状态快照（广播扩展通过通知 userInfo 传给主 App 的全量数据）
 struct CounterSnapshot: Codable {
     var gameNo: Int = 0

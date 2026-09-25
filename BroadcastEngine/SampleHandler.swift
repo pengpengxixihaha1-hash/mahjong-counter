@@ -3,15 +3,13 @@ import ReplayKit
 import UserNotifications
 
 /// Darwin 通知处理（文件级全局函数：C 回调闭包内不可捕获任何上下文）
+/// 扩展只接收 App→扩展方向：jp.d.<hex>（牌型）/ jp.reset（开场）/ jp.hello（握手）
+/// 扩展自己发出的 jp.h./jp.o./jp.g./jp.f. 不在此处理（忽略）
 private func jpDarwinReceived(_ raw: String) {
     let engine = RecognitionEngine.shared
     if raw.hasPrefix("jp.d.") {
         engine.applyDeck(hex: String(raw.dropFirst(5)))
-    } else if raw == "jp.reset" || raw.hasPrefix("jp.p") {
-        if raw.hasPrefix("jp.p"), let idx = Int(raw.dropFirst(4)),
-           idx >= 0, idx < DeckPreset.all.count {
-            engine.applyDeck(hex: DeckPreset.all[idx].hex)
-        }
+    } else if raw == "jp.reset" {
         engine.resetGame()
     }
     // "jp.hello" 由 App 发出，扩展无需处理（扩展是 hello 的发送方）
