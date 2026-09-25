@@ -51,8 +51,8 @@ final class PipController: NSObject {
         l.videoGravity = .resizeAspect
         l.frame = CGRect(x: 0, y: 0, width: 640, height: 420)
         l.backgroundColor = UIColor(red: 0.055, green: 0.067, blue: 0.086, alpha: 1).cgColor
-        guard let src = AVPictureInPictureController.ContentSource(sampleBufferDisplayLayer: l, playbackDelegate: self),
-              let p = AVPictureInPictureController(contentSource: src) else { return }
+        let src = AVPictureInPictureController.ContentSource(sampleBufferDisplayLayer: l, playbackDelegate: self)
+        let p = AVPictureInPictureController(contentSource: src)
         p.canStartPictureInPictureAutomaticallyFromInline = true
         p.delegate = self
         layer = l
