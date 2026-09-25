@@ -2,6 +2,21 @@ import Foundation
 import ReplayKit
 import UserNotifications
 
+/// Darwin 通知处理（文件级全局函数：C 回调闭包内不可捕获任何上下文）
+private func jpDarwinReceived(_ raw: String) {
+    let engine = RecognitionEngine.shared
+    if raw.hasPrefix("jp.d.") {
+        engine.applyDeck(hex: String(raw.dropFirst(5)))
+    } else if raw == "jp.reset" || raw.hasPrefix("jp.p") {
+        if raw.hasPrefix("jp.p"), let idx = Int(raw.dropFirst(4)),
+           idx >= 0, idx < DeckPreset.all.count {
+            engine.applyDeck(hex: DeckPreset.all[idx].hex)
+        }
+        engine.resetGame()
+    }
+    // "jp.hello" 由 App 发出，扩展无需处理（扩展是 hello 的发送方）
+}
+
 /// 广播上传扩展入口：系统把屏幕帧送进来，交给识别引擎；
 /// 并通过 Darwin 通知接收主 App 下发的牌型配置 / 开场指令。
 final class SampleHandler: RPBroadcastSampleHandler {
@@ -36,7 +51,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
         observerInstalled = true
         let cb: CFNotificationCallback = { _, _, name, _, _ in
             guard let name else { return }
-            handleDarwin(name.rawValue as String)
+            jpDarwinReceived(name.rawValue as String)
         }
         let center = CFNotificationCenterGetDarwinNotifyCenter()
         // 监听全部 Darwin 通知，回调里过滤 "jp." 前缀（Darwin 无通配订阅）
@@ -44,20 +59,6 @@ final class SampleHandler: RPBroadcastSampleHandler {
         // 固定名兜底（若 name=NULL 全订阅在该系统上不生效）
         CFNotificationCenterAddObserver(center, nil, cb, "jp.reset" as CFString, nil, .deliverImmediately)
         CFNotificationCenterAddObserver(center, nil, cb, "jp.hello" as CFString, nil, .deliverImmediately)
-    }
-
-    static func handleDarwin(_ raw: String) {
-        let engine = RecognitionEngine.shared
-        if raw.hasPrefix("jp.d.") {
-            engine.applyDeck(hex: String(raw.dropFirst(5)))
-        } else if raw == "jp.reset" || raw.hasPrefix("jp.p") {
-            if raw.hasPrefix("jp.p"), let idx = Int(raw.dropFirst(4)),
-               idx >= 0, idx < DeckPreset.all.count {
-                engine.applyDeck(hex: DeckPreset.all[idx].hex)
-            }
-            engine.resetGame()
-        }
-        // "jp.hello" 由 App 发出，扩展无需处理（扩展是 hello 的发送方）
     }
 
     private func postDarwin(_ name: String) {

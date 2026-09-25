@@ -3,6 +3,13 @@ import SwiftUI
 import ReplayKit
 import UserNotifications
 
+/// Darwin 回调（文件级全局函数：C 回调闭包内不可捕获任何上下文）
+private func jpHelloArrived() {
+    DispatchQueue.main.async {
+        NotificationBridge.shared.replyHello()
+    }
+}
+
 /// App ↔ 广播扩展 桥：
 ///  - 接收扩展发来的本地通知（userInfo 内含全量快照）→ 回调刷新界面
 ///  - 监听扩展握手（Darwin "jp.hello"）→ 回发当前牌型配置
@@ -16,8 +23,6 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
 
     /// 当前牌型 hex（由 CounterStore 更新，握手时回发给扩展）
     var currentDeckHex: String = DeckPreset.default.hex
-
-    private static var helloHandler: (() -> Void)?
 
     func activate() {
         UNUserNotificationCenter.current().delegate = self
@@ -71,17 +76,18 @@ final class NotificationBridge: NSObject, UNUserNotificationCenterDelegate {
     // MARK: - Darwin 通知
 
     private func installDarwinObserver() {
-        NotificationBridge.helloHandler = { [weak self] in
-            guard let self else { return }
-            self.post("jp.d." + self.currentDeckHex)
-        }
         let cb: CFNotificationCallback = { _, _, name, _, _ in
             guard let name, (name.rawValue as String) == "jp.hello" else { return }
-            DispatchQueue.main.async { NotificationBridge.helloHandler?() }
+            jpHelloArrived()
         }
         CFNotificationCenterAddObserver(
             CFNotificationCenterGetDarwinNotifyCenter(), nil, cb,
             "jp.hello" as CFString, nil, .deliverImmediately)
+    }
+
+    /// 扩展广播启动握手到达 → 回发当前牌型（主线程）
+    func replyHello() {
+        post("jp.d." + currentDeckHex)
     }
 
     /// 下发牌型：名字 "jp.d.<hex>"（扩展全订阅后过滤前缀）
