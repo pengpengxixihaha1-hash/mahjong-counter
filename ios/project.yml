@@ -18,6 +18,9 @@ targets:
   WeiLePoker50K:
     type: application
     platform: iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wl50k.poker50k
     sources:
       - path: WeiLePoker50K
       - path: Shared
@@ -47,6 +50,9 @@ targets:
   BroadcastExtension:
     type: app-extension
     platform: iOS
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.wl50k.poker50k.broadcast
     sources:
       - path: BroadcastExtension
       - path: Shared
