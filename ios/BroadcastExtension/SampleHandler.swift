@@ -28,7 +28,7 @@ final class SampleHandler: RPBroadcastSampleHandler {
     private var lastNewGame = false
 
     override func broadcastStarted(withSetupInfo setupInfo: [String: NSObject]?) {
-        IPC.ensureSamplesDir()
+        _ = IPC.ensureSamplesDir()
         push(status: recognizer.templatesLoaded ? "广播已开始，识别就绪" : "广播已开始（模板缺失）")
     }
 

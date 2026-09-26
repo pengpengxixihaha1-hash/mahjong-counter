@@ -263,11 +263,11 @@ final class FramePlanes {
     let height: Int
     private let pb: CVPixelBuffer
     private let is420: Bool
-    private let yBase: UnsafeRawPointer?
+    private let yBase: UnsafePointer<UInt8>?
     private let yStride: Int
-    private let cBase: UnsafeRawPointer?
+    private let cBase: UnsafePointer<UInt8>?
     private let cStride: Int
-    private let bgraBase: UnsafeRawPointer?
+    private let bgraBase: UnsafePointer<UInt8>?
     private let bgraStride: Int
 
     init?(_ pixelBuffer: CVPixelBuffer) {
@@ -284,9 +284,9 @@ final class FramePlanes {
                 CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
                 return nil
             }
-            yBase = y
+            yBase = y.assumingMemoryBound(to: UInt8.self)
             yStride = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
-            cBase = c
+            cBase = c.assumingMemoryBound(to: UInt8.self)
             cStride = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1)
             bgraBase = nil
             bgraStride = 0
@@ -299,7 +299,7 @@ final class FramePlanes {
             yStride = 0
             cBase = nil
             cStride = 0
-            bgraBase = b
+            bgraBase = b.assumingMemoryBound(to: UInt8.self)
             bgraStride = CVPixelBufferGetBytesPerRow(pixelBuffer)
         }
     }
@@ -320,8 +320,7 @@ final class FramePlanes {
         }
         if let base = bgraBase {
             let o = y * bgraStride + x * 4
-            let p = base.assumingMemoryBound(to: UInt8.self)
-            return (Float(p[o + 2]), Float(p[o + 1]), Float(p[o]))
+            return (Float(base[o + 2]), Float(base[o + 1]), Float(base[o]))
         }
         return (0, 0, 0)
     }

@@ -224,10 +224,11 @@ final class CardMatcher {
 
             let OW = iw - tw + 1, OH = ih - th + 1
             var cross = [Float](repeating: 0, count: OW * OH)
-            // vDSP_imgfir 参数语义：M=行数、N=列数（A/F 均行主序），
-            // 输出 C 为 (M-P+1) 行 × (N-Q+1) 列 → cross[oy * OW + ox]
-            vDSP_imgfir(inp.p, vDSP_Length(ih), vDSP_Length(iw), templ.p,
-                        vDSP_Length(th), vDSP_Length(tw), &cross)
+            // vDSP_imgfir 真实原型 (A, M, N, F, C, P, Q)：输出 C 在第 5 位。
+            // M=行数、N=列数（A/F 行主序），C 为 (M-P+1) 行 × (N-Q+1) 列
+            // → cross[oy * OW + ox]
+            vDSP_imgfir(inp.p, vDSP_Length(ih), vDSP_Length(iw), templ.p, &cross,
+                        vDSP_Length(th), vDSP_Length(tw))
             var best: Float = -1
             for oy in 0..<OH {
                 for ox in 0..<OW {
@@ -310,7 +311,8 @@ final class CardMatcher {
         for rank in top3 {
             guard let hit = perRank[rank],
                   let i0 = Self.ladder.firstIndex(of: hit.scale) else { continue }
-            let sub = Self.ladder[max(0, i0 - 1):min(Self.ladder.count, i0 + 2)]
+            let lo = max(0, i0 - 1), hi = min(Self.ladder.count, i0 + 2)
+            let sub = Self.ladder[lo..<hi]
             for tpl in centerTemplates where tpl.cls == rank {
                 for sc in sub {
                     let s = ctx.nccMax(CardMatcher.scaled(tpl.gray, sc))

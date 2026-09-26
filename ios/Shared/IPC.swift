@@ -103,7 +103,7 @@ public enum IPC {
     /// （iTunes / Apple Devices「文件共享」只能看到 Documents），返回目标目录。
     public static func copySamplesToDocuments() -> URL? {
         let docs = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first
-        guard let docs, let src = samplesDir else { return nil }
+        guard let docs, samplesDir != nil else { return nil }
         let dst = docs.appendingPathComponent("样本", isDirectory: true)
         try? FileManager.default.removeItem(at: dst)
         do {
