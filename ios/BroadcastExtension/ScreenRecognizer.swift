@@ -284,9 +284,9 @@ final class FramePlanes {
                 CVPixelBufferUnlockBaseAddress(pixelBuffer, .readOnly)
                 return nil
             }
-            yBase = y.assumingMemoryBound(to: UInt8.self)
+            yBase = UnsafePointer(y.assumingMemoryBound(to: UInt8.self))
             yStride = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 0)
-            cBase = c.assumingMemoryBound(to: UInt8.self)
+            cBase = UnsafePointer(c.assumingMemoryBound(to: UInt8.self))
             cStride = CVPixelBufferGetBytesPerRowOfPlane(pixelBuffer, 1)
             bgraBase = nil
             bgraStride = 0
@@ -299,7 +299,7 @@ final class FramePlanes {
             yStride = 0
             cBase = nil
             cStride = 0
-            bgraBase = b.assumingMemoryBound(to: UInt8.self)
+            bgraBase = UnsafePointer(b.assumingMemoryBound(to: UInt8.self))
             bgraStride = CVPixelBufferGetBytesPerRow(pixelBuffer)
         }
     }
