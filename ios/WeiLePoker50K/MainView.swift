@@ -185,7 +185,7 @@ struct MainView: View {
                 Spacer()
                 Text("\(vm.sampleCount) 帧").font(.caption).foregroundColor(.secondary)
             }
-            Text("阶段 1 仅采集对局帧样本，用于制作手机版识别模板；识别功能在样本标定后开启。")
+            Text("识别已开启：录屏广播期间自动识别桌牌并实时统计剩余牌数。开启「样本采集模式」可同时保存帧样本，用于后续校准。")
                 .font(.caption).foregroundColor(.secondary)
             Button("导出样本（复制到文件 / 文件共享）") { vm.exportSamples() }
                 .buttonStyle(.bordered)
@@ -200,7 +200,7 @@ struct MainView: View {
     private var hintCard: some View {
         VStack(alignment: .leading, spacing: 6) {
             Text("使用顺序").font(.headline)
-            Text("① 打开「样本采集模式」→ ② 点录屏按钮开始广播 → ③ 切到微乐打一局 → ④ 回这里导出样本发给电脑 → ⑤ （模板制作后）启动浮窗看剩余牌数")
+            Text("① 点录屏按钮开始广播（识别自动运行）→ ② 切到微乐打一局 → ③ 启动浮窗看剩余牌数。如需校准：局中打开「样本采集模式」，局后导出样本发到电脑")
                 .font(.caption).foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

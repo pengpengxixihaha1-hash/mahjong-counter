@@ -1,0 +1,51 @@
+﻿shot_001.png: hand=18(0?) ctr=2(0?) total=20
+  手牌: 3x2 4x2 5x2 8x3 9x1 10x2 Qx1 Kx1 Ax4
+  中央: 6x2
+shot_002.png: hand=26(0?) ctr=0(0?) total=26
+  手牌: 3x1 4x2 5x2 6x2 7x3 8x1 9x3 10x1 Qx3 Kx3 Ax2 2x3
+  中央: 
+shot_003.png: hand=21(7?) ctr=5(1?) total=26
+  手牌: 3x2 4x2 5x2 6x2 8x3 9x1 10x2 Qx1 Kx1 Ax4 王x1
+  中央: Jx1 Qx4
+shot_004.png: hand=20(0?) ctr=12(1?) total=32
+  手牌: 3x2 4x2 5x2 6x2 8x3 9x1 10x2 Qx1 Kx1 Ax4
+  中央: 4x6 Jx2 Qx4
+shot_005.png: hand=26(2?) ctr=7(8?) total=33
+  手牌: 3x2 4x2 5x2 6x2 8x3 9x1 10x2 Jx5 Qx1 Kx1 Ax4 王x1
+  中央: 7x7
+shot_006.png: hand=0(0?) ctr=0(0?) total=0
+  手牌: 
+  中央: 
+shot_007.png: hand=26(2?) ctr=5(1?) total=31
+  手牌: 3x2 4x2 5x2 6x2 8x3 9x1 10x2 Jx5 Qx1 Kx1 Ax4 王x1
+  中央: Jx1 Qx4
+shot_008.png: hand=23(0?) ctr=6(2?) total=29
+  手牌: 4x2 5x3 6x3 7x1 9x1 10x2 Jx1 Qx2 Kx3 Ax1 2x3 王x1
+  中央: 3x3 10x3
+shot_009.png: hand=4(0?) ctr=3(2?) total=7
+  手牌: 5x1 7x3
+  中央: Kx1 Ax1 王x1
+shot_010.png: hand=23(2?) ctr=4(1?) total=27
+  手牌: 4x2 5x2 6x2 7x3 8x1 9x3 10x1 Qx3 Kx3 2x3
+  中央: 6x2 8x2
+shot_011.png: hand=10(3?) ctr=6(3?) total=16
+  手牌: 4x2 5x1 6x2 7x3 Kx2
+  中央: 4x1 Jx2 Qx3
+shot_012.png: hand=6(2?) ctr=6(1?) total=12
+  手牌: 5x1 6x2 7x3
+  中央: 6x2 9x2 10x2
+shot_013.png: hand=13(0?) ctr=6(3?) total=19
+  手牌: 4x2 5x1 6x2 7x3 Kx2 2x3
+  中央: 8x3 9x3
+shot_014.png: hand=25(0?) ctr=7(2?) total=32
+  手牌: 4x2 5x2 6x2 7x3 8x1 9x3 10x1 Qx3 Kx3 Ax2 2x3
+  中央: 4x1 10x1 Jx5
+shot_015.png: hand=23(0?) ctr=6(2?) total=29
+  手牌: 4x2 5x2 6x2 7x3 8x1 9x3 10x1 Qx3 Kx3 2x3
+  中央: 8x2 Ax2 2x2
+shot_016.png: hand=20(0?) ctr=8(0?) total=28
+  手牌: 4x2 5x1 6x2 7x3 8x1 9x3 Qx3 Kx2 2x3
+  中央: 5x4 7x4
+shot_017.png: hand=20(0?) ctr=7(3?) total=27
+  手牌: 4x2 5x1 6x2 7x3 8x1 9x3 Qx3 Kx2 2x3
+  中央: 5x2 10x2 Kx2 王x1
