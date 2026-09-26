@@ -60,7 +60,7 @@ final class CardMatcher {
         centerTemplates = load("Templates/center", size: Self.centerSize, bundle: bundle)
     }
 
-    private func load(_ sub: String, size: (Int, Int), bundle: Bundle) -> [Template] {
+    private func load(_ sub: String, size: (w: Int, h: Int), bundle: Bundle) -> [Template] {
         guard let urls = bundle.urls(forResourcesWithExtension: "png",
                                      subdirectory: sub) else { return [] }
         var out: [Template] = []
@@ -164,7 +164,7 @@ final class CardMatcher {
 
     static func dropRows(_ g: GrayImage, _ k: Int) -> GrayImage {
         guard k > 0, k < g.h else { return g }
-        return GrayImage(w: g.w, h: g.h - k, p: Array(g.p[k * g.w...]))
+        return GrayImage(w: g.w, h: g.h - k, p: Array(g.p[(k * g.w)...]))
     }
 
     /// 列投影聚簇（PC find_glyph_clusters）：merge_gap 内合并；超宽簇按 split_at 等分

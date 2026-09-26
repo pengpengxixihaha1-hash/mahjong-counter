@@ -55,7 +55,7 @@ public enum IPC {
         guard let defaults = defaults,
               let data = try? JSONEncoder().encode(s) else { return }
         defaults.set(data, forKey: stateKey)
-        notify()
+        // 主 App 0.5s 轮询 UserDefaults，无需跨进程通知（Darwin 通知 API 未暴露给 Swift）
     }
 
     public static func read() -> Snapshot {
@@ -65,12 +65,6 @@ public enum IPC {
             return .empty
         }
         return s
-    }
-
-    public static func notify() {
-        CFNotificationCenterPostNotification(
-            CFNotificationCenterGetDarwinNotificationCenter(),
-            CFNotificationName(darwinName as CFString), nil, nil, true)
     }
 
     // MARK: - 样本采集开关与目录
