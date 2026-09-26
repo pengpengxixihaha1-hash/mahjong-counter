@@ -10,10 +10,13 @@ on:
 
 jobs:
   build:
-    runs-on: macos-14
+    runs-on: macos-15
     steps:
       - name: 检出代码
         uses: actions/checkout@v4
+
+      - name: 检查 Xcode 版本
+        run: xcodebuild -version
 
       - name: 安装 XcodeGen
         run: brew install xcodegen
