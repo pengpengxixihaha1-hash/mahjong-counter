@@ -1,4 +1,5 @@
 import AVFoundation
+import AVKit
 import CoreMedia
 import UIKit
 
@@ -59,14 +60,16 @@ final class PipController: NSObject, ObservableObject {
         guard let pb = renderer.render(view: overlayView) else { return }
         let pts = CMTime(seconds: CACurrentMediaTime(), preferredTimescale: 600)
         if let tb = displayLayer.controlTimebase {
-            CMTimebaseSetTime(tb, pts)
+            CMTimebaseSetTime(tb, time: pts)
         }
         var timing = CMSampleTimingInfo(
             duration: CMTime(value: 1, timescale: 10),
-            presentationTimeStamp: pts)
+            presentationTimeStamp: pts,
+            decodeTimeStamp: .invalid)
         var fmt: CMVideoFormatDescription?
         CMVideoFormatDescriptionCreateForImageBuffer(
             allocator: nil, imageBuffer: pb, formatDescriptionOut: &fmt)
+        guard let fmt else { return }
         var sb: CMSampleBuffer?
         CMSampleBufferCreateForImageBuffer(
             allocator: nil, imageBuffer: pb, dataReady: true,

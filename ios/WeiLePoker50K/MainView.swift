@@ -121,7 +121,7 @@ struct MainView: View {
                 let m = vm.snapshot.main
                 let order = CounterOverlayView.order
                 let labels = CounterOverlayView.label
-                Text("主条 " + order.map { "\((labels[$0] ?? $0))\(m[$0] ?? "-")" }.joined(separator: " "))
+                Text("主条 " + order.map { "\((labels[$0] ?? $0))\(m[$0].map(String.init) ?? "-")" }.joined(separator: " "))
                     .font(.system(.caption, design: .monospaced))
                 ForEach(vm.snapshot.seats, id: \.name) { s in
                     Text("\(s.name) 剩 \(s.left)" + (s.cards.isEmpty ? "" : "  \(s.cards)"))
