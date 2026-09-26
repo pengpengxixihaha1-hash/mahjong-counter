@@ -1,0 +1,27 @@
+# Python 运行产物
+__pycache__/
+*.pyc
+
+# 回放样本与调试目录（体积大，仅保留在本地）
+samples/
+joker_scan/
+midband/
+raise_check/
+replay_log*.txt
+*.log
+
+# 根目录调试可视化 PNG（templates/ 内的模板不受影响）
+/*.png
+
+# 模板目录的中间产物（正式模板在 templates/hand 与 templates/center）
+templates/unknown/
+templates/hand_raw/
+templates/center_raw/
+
+# 机器特定配置
+local.properties
+
+# 构建产物
+ios/build/
+*.ipa
+Payload/

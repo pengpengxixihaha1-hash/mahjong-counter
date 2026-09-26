@@ -1,0 +1,72 @@
+name: WeiLePoker50K
+options:
+  bundleIdPrefix: com.wl50k
+  deploymentTarget:
+    iOS: "15.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.9"
+    TARGETED_DEVICE_FAMILY: "1"
+    CODE_SIGN_IDENTITY: "Apple Development"
+    CODE_SIGN_STYLE: Automatic
+    CURRENT_PROJECT_VERSION: "1"
+    MARKETING_VERSION: "1.0"
+    GENERATE_INFOPLIST_FILE: NO
+
+targets:
+  WeiLePoker50K:
+    type: application
+    platform: iOS
+    sources:
+      - path: WeiLePoker50K
+      - path: Shared
+    dependencies:
+      - target: BroadcastExtension
+        embed: true
+    info:
+      path: WeiLePoker50K/Info.plist
+      properties:
+        CFBundleDisplayName: 五十K记牌器
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UIFileSharingEnabled: true
+        LSSupportsOpeningDocumentsInPlace: true
+        UIBackgroundModes:
+          - audio
+        NSPhotoLibraryAddUsageDescription: 导出识别样本时可能需要保存图片
+    entitlements:
+      path: WeiLePoker50K/WeiLePoker50K.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.wl50k.poker50k
+
+  BroadcastExtension:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: BroadcastExtension
+      - path: Shared
+    info:
+      path: BroadcastExtension/Info.plist
+      properties:
+        CFBundleDisplayName: 五十K记牌器扩展
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.broadcast-services-upload
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).SampleHandler
+    entitlements:
+      path: BroadcastExtension/BroadcastExtension.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.com.wl50k.poker50k
+
+schemes:
+  WeiLePoker50K:
+    build:
+      targets:
+        WeiLePoker50K: all
