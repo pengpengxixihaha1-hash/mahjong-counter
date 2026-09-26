@@ -38,7 +38,7 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             AD_HOC_CODE_SIGNING_ALLOWED=YES \
-            2>&1 | tail -60
+            2>&1 | tail -200
 
       - name: 打包未签名 ipa
         working-directory: ios

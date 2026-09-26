@@ -1,3 +1,4 @@
+import CoreFoundation
 import Foundation
 
 // 双进程共享：Broadcast Extension 写 → 主 App 读（App Group UserDefaults + 容器目录）

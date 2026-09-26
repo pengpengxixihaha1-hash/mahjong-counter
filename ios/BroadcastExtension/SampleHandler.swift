@@ -34,8 +34,8 @@ final class SampleHandler: RPBroadcastSampleHandler {
         push(status: "广播结束，共采集 \(savedCount) 帧")
     }
 
-    override func process(_ sampleBuffer: CMSampleBuffer, with sampleType: RPSampleBufferType) {
-        guard sampleType == .video,
+    override func processSampleBuffer(_ sampleBuffer: CMSampleBuffer, with sampleBufferType: RPSampleBufferType) {
+        guard sampleBufferType == .video,
               let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let pts = CMSampleBufferGetPresentationTimeStamp(sampleBuffer).seconds
         guard pts.isFinite, pts - lastPTS >= frameInterval else { return }

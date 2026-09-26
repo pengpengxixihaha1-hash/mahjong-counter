@@ -312,7 +312,7 @@ final class CardMatcher {
 
     /// 裁剪 → 尺度归一 + 平移搜索匹配；分层：字母区定牌点，花色区定花色。
     /// minLH：牌点字母最小行高，低于此判碎片不入账（手牌 8；中央禁用 0 防误杀红J）
-    func classify(crop: CropPixels, size: (Int, Int), minLH: Float = 8) -> ClassifyResult {
+    func classify(crop: CropPixels, size: (w: Int, h: Int), minLH: Float = 8) -> ClassifyResult {
         var g = CardMatcher.resize(GrayImage(w: crop.w, h: crop.h, p: crop.gray),
                                    width: size.w, height: size.h)
         var rp = CardMatcher.resize(GrayImage(w: crop.w, h: crop.h, p: crop.r),
